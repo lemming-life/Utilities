@@ -27,7 +27,11 @@ class ClipboardShare {
         while(true) {
             final switch(_state) {
             case State.READY:
-                if (_text != Clipboard.readText) writeToFile;
+                if (!_path.exists) {
+                    performWaiting;
+                } else {
+                    if (_text != Clipboard.readText) writeToFile;
+                }
                 break;
             case State.WAITING:
                 if (_path.exists) performReady;
@@ -60,6 +64,7 @@ class ClipboardShare {
         file.write(_text);
         file.close;
         _timeStamp = DirEntry(_pathFile).timeLastModified;
+        _state = State.READY;
     }
 
     void readFromFile() {
@@ -68,6 +73,7 @@ class ClipboardShare {
         _text = to!wstring(_pathFile.readText);
         Clipboard.writeText(_text);
         _timeStamp = DirEntry(_pathFile).timeLastModified;
+        _state = State.READY;
     }
 
     void performReady() {
@@ -76,7 +82,6 @@ class ClipboardShare {
         } else {
             writeToFile;
         }
-        _state = State.READY;
     }
 
     void performWaiting() {

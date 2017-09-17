@@ -58,22 +58,32 @@ class ClipboardShare {
 
     void writeToFile() {
         auto oldText = _text;
-        scope(failure) { _state = State.WAITING; _text = oldText; _timeStamp = Clock.currTime; } 
-        auto file = File(_pathFile, "w");
-        _text = Clipboard.readText;
-        file.write(_text);
-        file.close;
-        _timeStamp = DirEntry(_pathFile).timeLastModified;
-        _state = State.READY;
+        
+        try {
+            _text = Clipboard.readText;
+            auto file = File(_pathFile, "w");
+            file.write(_text);
+            file.close;
+            _timeStamp = DirEntry(_pathFile).timeLastModified;
+            _state = State.READY;
+        } catch (Exception e) {
+            _text = oldText;
+            _timeStamp = Clock.currTime;
+            _state = State.WAITING; 
+        }
     }
 
     void readFromFile() {
-        scope(failure) { _state = State.WAITING; }
         if (DirEntry(_pathFile).timeLastModified < _timeStamp) return;
-        _text = to!wstring(_pathFile.readText);
-        Clipboard.writeText(_text);
-        _timeStamp = DirEntry(_pathFile).timeLastModified;
-        _state = State.READY;
+
+        try {
+            _text = to!wstring(_pathFile.readText);
+            Clipboard.writeText(_text);
+            _timeStamp = DirEntry(_pathFile).timeLastModified;
+            _state = State.READY;
+        } catch (Exception e) {
+            _state = State.WAITING; 
+        }
     }
 
     void performReady() {

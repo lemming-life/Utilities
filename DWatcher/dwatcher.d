@@ -51,7 +51,7 @@ void execute(string name, ref string[][string] executeMap) {
     foreach(k, v; executeMap) {
         if (name.lastIndexOf(k) == name.length - k.length) {
             wait( spawnProcess(v ~ [name]) );
-            ("WATCHER | Execution of " ~  name ~ " completed.").writeln;
+            ("WATCHER | Execution of " ~  name ~ " completed at " ~ Clock.currTime().toSimpleString()).writeln;
         }
     }
 }

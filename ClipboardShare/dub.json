@@ -1,0 +1,21 @@
+{
+	"name": "cshare",
+	"authors": [
+		"http://lemming.life"
+	],
+	"description": "Clipboard sharing utility via USB switch.",
+	"copyright": "Copyright © 2017, http://lemming.life",
+	"license": "The Unlicense",
+
+	"dependencies": {
+		"cshare:clipboard_share" : "*"
+	},
+
+	"subPackages" : [
+		{
+			"name": "clipboard_share",
+			"importPaths": ["./libs"],
+			"sourcePaths": ["./libs"]
+		}
+	]
+}

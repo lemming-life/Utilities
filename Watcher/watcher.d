@@ -1,7 +1,7 @@
 // Author: http://lemming.life
 // Title: Watcher
 // Description: Watches source code files for changes , 
-//              and runs compile/execute tools. 
+//              and runs compile/execute tools on those source files. 
 //              It should help speed up test driven development.
 // Supports: D files with unittest
 //           SML of New Jersey files

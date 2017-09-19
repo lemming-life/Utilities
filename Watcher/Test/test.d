@@ -7,6 +7,7 @@ class Test {
 }
 
 unittest {
+    import std.stdio : writeln;
     auto test = new Test();
-    assert(test.toString == "Hello, World!");
+    test.toString.writeln;
 }

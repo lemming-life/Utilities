@@ -22,6 +22,9 @@ void main(string[] args) {
     (new Watcher(args[1])).run();
 }
 
+
+enum Extension : string { D = ".d", SML = ".sml" }
+
 class Watcher {
     public:
 
@@ -88,9 +91,6 @@ class Watcher {
     }
     
 } // End class Watcher
-
-
-enum Extension : string { D = ".d", SML = ".sml" }
 
 abstract class WatcherBehavior {
     string[] params;

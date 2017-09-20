@@ -142,7 +142,17 @@ class WatcherSML : WatcherBehavior {
 }
 
 class WatcherGolang : WatcherBehavior {
-    this() {
-        params = ["go", "build"];
+    //this() {
+    //    params = ["go", "run"];
+    //}
+
+    override void preRun(string originalName) {
+        this.originalName = originalName;
+        auto text = originalName.readText;
+        if (text.indexOf("func main") > -1 ){
+            params = ["go", "run"];
+        } else {
+            params = ["go", "build"];
+        }
     }
 }

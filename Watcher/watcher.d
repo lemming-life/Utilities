@@ -142,14 +142,12 @@ class WatcherSML : WatcherBehavior {
 }
 
 class WatcherGolang : WatcherBehavior {
-    //this() {
-    //    params = ["go", "run"];
-    //}
-
     override void preRun(string originalName) {
+        import std.regex;
         this.originalName = originalName;
         auto text = originalName.readText;
-        if (text.indexOf("func main") > -1 ){
+
+        if (matchFirst(text, regex("func[ \t]+main")) ) {
             params = ["go", "run"];
         } else {
             params = ["go", "build"];

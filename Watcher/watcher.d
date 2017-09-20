@@ -1,10 +1,11 @@
 // Author: http://lemming.life
 // Title: Watcher
-// Description: Watches source code files for changes , 
-//              and runs compile/execute tools on those source files. 
+// Description: Watches source code files for changes ,
+//              and runs compile/execute tools on those source files.
 //              It should help speed up test driven development.
 // Supports: D files with unittest
 //           SML of New Jersey files
+//           Golang
 //           Could be extended to cover Java, Go, and other languages by adding
 //           a class that covers the specific needs of that language.
 
@@ -23,7 +24,7 @@ void main(string[] args) {
 }
 
 
-enum Extension : string { D = ".d", SML = ".sml" }
+enum Extension : string { D = ".d", SML = ".sml", GO = ".go" }
 
 class Watcher {
     public:
@@ -33,6 +34,7 @@ class Watcher {
         this.originPath = originPath;
         executeMap[Extension.D] = new WatcherD();
         executeMap[Extension.SML] = new WatcherSML();
+        executeMap[Extension.GO] = new WatcherGolang();
     }
 
     // Monitors the originPath
@@ -89,7 +91,7 @@ class Watcher {
             }
         }
     }
-    
+
 } // End class Watcher
 
 abstract class WatcherBehavior {
@@ -126,7 +128,7 @@ class WatcherSML : WatcherBehavior {
         this.originalName = originalName;
         currentName = originalName[0 .. originalName.length - Extension.SML.length] ~ "_temp" ~ Extension.SML;
         copy(originalName, currentName);
-        append(currentName, "OS.Process.exit(OS.Process.success);"); 
+        append(currentName, "OS.Process.exit(OS.Process.success);");
     }
 
     override void run() {
@@ -136,5 +138,11 @@ class WatcherSML : WatcherBehavior {
     override void postRun() {
         super.postRun();
         if (currentName.exists) currentName.remove;
+    }
+}
+
+class WatcherGolang : WatcherBehavior {
+    this() {
+        params = ["go", "build"];
     }
 }

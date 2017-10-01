@@ -87,7 +87,12 @@ class Scanner {
 
 
 unittest {
-    import std.conv, std.stdio;
+    debug {
+        import std.stdio : writeln;
+        "\n\nBEGINNING scanner.d unittest".writeln;
+    }
+
+    import std.conv : to;
     import std.traits : EnumMembers;
 
     auto scanner = new Scanner("");
@@ -153,9 +158,9 @@ unittest {
         assert(scanner.processLine.type == TokenType.DIRECTIVE);
     }
 
-    scanner.line = "< >";
+    // Fail cases
+    scanner.line = "<>";
     assert(scanner.processLine.type == TokenType.INVALID);
     scanner.line = scanner.line[1 .. $];
-    assert(scanner.processLine.type == TokenType.WS);
     assert(scanner.processLine.type == TokenType.INVALID);
 } // End unittest

@@ -7,7 +7,7 @@ enum TokenType {
 }
 
 enum Opcode {
-    JMP, JMR, BNZ, BGT, BLT,
+    JMP = 0, JMR, BNZ, BGT, BLT,
     BRZ, MOV, LDA, ADD, ADI,
     SUB, MUL, DIV, AND, OR,
     CMP, TRP, RUN, END, BLK,
@@ -15,11 +15,15 @@ enum Opcode {
     LDBI, STR, LDR, STB, LDB,
 }
 
+enum IndirectOffset {
+    VALUE = 4
+}
+
 enum Register {
     R0, R10, R11, R12, R1,
     R2, R3, R4, R5, R6,
-    R7, R8, R9, SP, FP,
-    SL, SB, PC
+    R7, R8, R9,
+    SP = R8, FP = R9, SL = R10, SB = R11, PC = R12
 }
 
 enum Directive {

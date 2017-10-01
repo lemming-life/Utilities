@@ -8,20 +8,21 @@ class Assembler {
 
     public:
     byte[] getMemory() { return memory; }
-    uint[string] getLabels() { return labels; }
+    int[string] getLabels() { return labels; }
     uint getFirstInstructionOffset() { return firstInstructionOffset; }
 
     this(string file, byte[] memory = new byte[1_000_000]) {
         if (!file.exists) { throw new Exception("File does not exist."); }
         this.file = file;
         this.memory = memory;
-        scanner = new Scanner(file);
+        currentPass = Pass.NILL;
     }
 
     void run() {
         // First pass: ensure syntax is correct, build up labels with correct offsets.
         // Second pass: byte code generation
         try{
+            scanner = new Scanner(file);
             currentPass = currentPass == Pass.NILL ? Pass.FIRST : Pass.SECOND;
             inDataSegment = true;
             offset = 0;
@@ -43,10 +44,11 @@ class Assembler {
     string file;
     Pass currentPass;
     bool inDataSegment;
-    uint[string] labels;
+    int[string] labels;
     byte[] memory;
     uint offset;
     uint firstInstructionOffset;
+    bool inInstruction;
 
     /// Makes it a bit easier to call scanner token
     Token token() {
@@ -55,31 +57,23 @@ class Assembler {
 
     void analyze() {
         switch(token.type) {
-        case TokenType.LABEL:
-            auto tempOffset = offset;
-            auto labelName = token.text;
-            if (labelName in labels) throw new Exception("Duplicate labels.");
-            label;
-            if (currentPass == Pass.FIRST) labels[labelName] = tempOffset;
-            break;
+        case TokenType.LABEL:       label;          break;
         case TokenType.DIRECTIVE:   directive;      break;
         case TokenType.OPCODE:      instruction;    break;
         default: throw new Exception("Expecting label/directive/opcode.");
         }
     }
 
-    /// Directive
     void directive() {
         debug{ ("directive is " ~ token.text).writeln; }
         if (!inDataSegment) throw new Exception("Directive in non data segment.");
         switch(to_member!Directive(token.text[1 .. $])) {
-        case Directive.INT: scanner.getNextToken;   checkWS;    integer;    offset += Offset.INT;   break;
-        case Directive.BYT: scanner.getNextToken;   checkWS;    character;  offset += Offset.BYT;   break;
+        case Directive.INT: scanner.getNextToken;   checkWS;    integer;       break;
+        case Directive.BYT: scanner.getNextToken;   checkWS;    character;     break;
         default: throw new Exception("Expecting a directive.");
         }
     }
 
-    /// This one can be quite long.
     void instruction() {
         debug { ("instruction is " ~ token.text).writeln; }
         if (inDataSegment) {
@@ -90,6 +84,11 @@ class Assembler {
         if (!to_array!Opcode().canFind(opcode)) throw new Exception("Expecting opcode.");
         scanner.getNextToken;
         if (![Opcode.END, Opcode.BLK].canFind(opcode)) checkWS;
+
+        if (currentPass == Pass.SECOND) memory.writeTo!int(opcode, offset);
+        inInstruction = true;
+        auto originalOffset = offset;
+        offset += Offset.INT;
 
         final switch(opcode) {
         case Opcode.END, Opcode.BLK:                                                                         break;
@@ -104,18 +103,32 @@ class Assembler {
         case Opcode.MOV, Opcode.ADD, Opcode.SUB, Opcode.OR,
              Opcode.MUL, Opcode.DIV, Opcode.AND, Opcode.CMP:     register;   checkWS;    register;           break;
         }
-        offset += Offset.INSTR;
+        
+        offset = originalOffset + Offset.INSTR;
+        inInstruction = false;
     }
 
     void label() {
         debug{ ("label is " ~ token.text).writeln; }
         if (token.type != TokenType.LABEL) throw new Exception("Expecting label.");
+
+        if (currentPass == Pass.FIRST) {
+            if (!inInstruction) {
+                if (token.text in labels) throw new Exception("Duplicate labels.");
+                labels[token.text] = offset;
+            }
+        } else if(currentPass == Pass.SECOND && inInstruction) {
+            memory.writeTo(labels[token.text] ,offset);
+        }
         scanner.getNextToken;
     }
 
     void register() {
         debug { ("register is " ~ token.text).writeln; }
         if (token.type != TokenType.REGISTER) throw new Exception("Expecting register.");
+        if (currentPass == Pass.SECOND) memory.writeTo(to_member!Register(token.text), offset);
+        //writeToMemory!int(to_member!Register(token.text), offset); 
+         //*(cast(int*)(&memory + offset)) = to_member!Register(token.text);
         scanner.getNextToken;
     }
 
@@ -123,7 +136,14 @@ class Assembler {
         debug { ("label or register is " ~ token.text).writeln; }
         switch(token.type) {
         case TokenType.LABEL:       label;      break;
-        case TokenType.REGISTER:    register;   break;
+        case TokenType.REGISTER:
+            if (currentPass == Pass.SECOND && inInstruction) {
+                // Need to correct register
+                auto opcodeOffset = offset - 8;
+                auto newOpcode = memory.readFrom!int(opcodeOffset) - 4;
+                memory.writeTo(newOpcode, opcodeOffset);
+            }
+            register;   break;
         default: throw new Exception("Expecting label or register.");
         }
     }
@@ -137,27 +157,38 @@ class Assembler {
     void integer() {
         debug { ("int is " ~ token.text).writeln; }
         if (token.type != TokenType.INT) throw new Exception("Expecting integer.");
+        if (currentPass == Pass.SECOND) memory.writeTo(token.to_i, offset);
         scanner.getNextToken;
+        offset += Offset.INT;
     }
 
     void character() {
         debug { ("char is " ~ token.text).writeln; }
         if (token.type != TokenType.CHAR) throw new Exception("Expecting character.");
+        if (currentPass == Pass.SECOND) memory.writeTo(token.to_c, offset);
         scanner.getNextToken;
+        offset += Offset.BYT;
     }
 
     void trap() {
         debug { ("trap is " ~ token.text).writeln; }
         if (token.type != TokenType.INT || !to_array_values!Trap().canFind(token.text) )
             throw new Exception("Expecting valid trap number.");
+        
+        if (currentPass == Pass.SECOND) memory.writeTo(token.to_i, offset);
         scanner.getNextToken;
     }
+
+
 } // End Assembler
 
 
 unittest {
     import std.file : exists, remove;
     import std.stdio : File, writeln;
+    import std.conv : to;
+
+    debug { "\n\nBEGINNING assembler.d unittest".writeln; }
 
     {
         // Begin syntax test (1st pass), also check labels.
@@ -231,12 +262,23 @@ unittest {
         string file = "test.asm";
         scope(exit) { if (file.exists) file.remove; }
         
-        { File(file, "w").write(r""); }
+        { File(file, "w").write(r"
+            .BYT 'a'
+            .INT -123
+            .BYT 'b'
+            TRP 0
+        "); }
 
         try {
             auto assembler = new Assembler(file);
             assembler.run; assembler.run;
             auto memory = assembler.getMemory();
+            assert(memory.readFrom!char(0) == 'a');
+            assert(memory.readFrom!int(1) == -123);
+            assert(memory.readFrom!char(5) == 'b');
+            assert(memory.readFrom!int(6) == Opcode.TRP.to_i);
+            assert(memory.readFrom!int(10) == 0);
+
         } catch (Exception e) {
             e.msg.writeln;
         }

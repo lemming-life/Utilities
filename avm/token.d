@@ -20,12 +20,23 @@ struct Token {
         import std.conv : to;
         int result;
         switch(_type) {
-            default:                result = 0;                                 break;
             case TokenType.INT:     result = to!int(_text);                     break;
             case TokenType.CHAR:    result = to!int(to!char(_text[1 .. $-1]));  break;
+            default:                result = 0;                                 break;
         }
         return result;
     } // End to_i
+
+    char to_c() {
+        import std.conv : to;
+        char result;
+        switch(_type) {
+            case TokenType.INT:     result = to!char(to!int(_text));            break;
+            case TokenType.CHAR:    result = to!char(_text[1 .. $-1]);          break;
+            default:                result = to!char(0);                        break;
+        }
+        return result;
+    }
 
     @property {
         string text() { return _text; }
@@ -41,4 +52,6 @@ unittest {
     assert(Token("1", TokenType.INT).to_i == 1);
     assert(Token("'a'", TokenType.CHAR).to_i == 97);
     assert(Token("'\n'", TokenType.CHAR).to_i == 10);
+    assert(Token("65", TokenType.INT).to_c == 'A');
+    assert(Token("'A'", TokenType.CHAR).to_c == 'A');
 }

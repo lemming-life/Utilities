@@ -279,7 +279,6 @@ unittest {
             assert(memory.readFrom!char(5) == 'b');
             assert(memory.readFrom!int(6) == Opcode.JMP);
 
-            //auto labels = assembler.getLabels;
             assert(memory.readFrom!int(10) == assembler.getLabels["main"]);
             assert(memory.readFrom!int(18) == Opcode.TRP);
             assert(memory.readFrom!int(22) == 0);

@@ -113,8 +113,15 @@ abstract class WatcherBehavior {
 }
 
 class WatcherD : WatcherBehavior {
-    this() {
-        params = ["rdmd", "-unittest", "--main"];
+    override void preRun(string originalName) {
+        import std.regex;
+        this.originalName = originalName;
+        auto text = originalName.readText;
+        if ( matchFirst(text, regex("void[ \t]+main")) ) {
+            params = ["rdmd"];
+        } else if( matchFirst(text, regex("unittest")) ) {
+            params = ["rdmd", "-unittest", "--main"];
+        }
     }
 }
 
@@ -147,7 +154,7 @@ class WatcherGolang : WatcherBehavior {
         this.originalName = originalName;
         auto text = originalName.readText;
 
-        if (matchFirst(text, regex("func[ \t]+main")) ) {
+        if ( matchFirst(text, regex("func[ \t]+main")) ) {
             params = ["go", "run"];
         } else {
             params = ["go", "build"];

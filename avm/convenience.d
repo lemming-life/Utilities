@@ -1,11 +1,5 @@
 module convenience;
 
-
-
-
-import enums;
-
-
 string to_s(T)(T n) {
     import std.conv : to;
     return to!string(n);

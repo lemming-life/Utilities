@@ -266,7 +266,8 @@ unittest {
             .BYT 'a'
             .INT -123
             .BYT 'b'
-            TRP 0
+            JMP main
+            main TRP 0
         "); }
 
         try {
@@ -276,8 +277,12 @@ unittest {
             assert(memory.readFrom!char(0) == 'a');
             assert(memory.readFrom!int(1) == -123);
             assert(memory.readFrom!char(5) == 'b');
-            assert(memory.readFrom!int(6) == Opcode.TRP.to_i);
-            assert(memory.readFrom!int(10) == 0);
+            assert(memory.readFrom!int(6) == Opcode.JMP);
+
+            //auto labels = assembler.getLabels;
+            assert(memory.readFrom!int(10) == assembler.getLabels["main"]);
+            assert(memory.readFrom!int(18) == Opcode.TRP);
+            assert(memory.readFrom!int(22) == 0);
 
         } catch (Exception e) {
             e.msg.writeln;

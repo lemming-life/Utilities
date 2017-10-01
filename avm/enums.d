@@ -6,7 +6,7 @@ enum TokenType {
     NONE
 }
 
-enum Opcode {
+enum Opcode : int {
     JMP = 0, JMR, BNZ, BGT, BLT,
     BRZ, MOV, LDA, ADD, ADI,
     SUB, MUL, DIV, AND, OR,

@@ -17,10 +17,13 @@
 // Now modify and save the test.d or file.sml file.
 
 import core.thread, std.datetime, std.file, std.path, std.process, std.string, std.stdio;
+import std.conv;
 
 void main(string[] args) {
-    if (args.length != 2) { "Invalid argument count.".writeln; return; }
-    (new Watcher(args[1])).run();
+    //if (args.length != 2) { "Invalid argument count.".writeln; return; }
+    bool DEBUG;
+    if (args.length == 3) { DEBUG = to!bool(args[2]); }
+    (new Watcher(args[1], DEBUG)).run();
 }
 
 
@@ -30,9 +33,9 @@ class Watcher {
     public:
 
     // Constructor
-    this(string originPath) {
+    this(string originPath, bool DEBUG = false) {
         this.originPath = originPath;
-        executeMap[Extension.D] = new WatcherD();
+        executeMap[Extension.D] = new WatcherD(DEBUG);
         executeMap[Extension.SML] = new WatcherSML();
         executeMap[Extension.GO] = new WatcherGolang();
     }
@@ -113,15 +116,29 @@ abstract class WatcherBehavior {
 }
 
 class WatcherD : WatcherBehavior {
+    bool DEBUG;
+    this(bool DEBUG) { this.DEBUG = DEBUG; }
+
     override void preRun(string originalName) {
         import std.regex;
         this.originalName = originalName;
         auto text = originalName.readText;
-        if ( matchFirst(text, regex("void[ \t]+main")) ) {
+        if ( matchFirst(text, regex(r"void[ \t]+main")) ) {
             params = ["rdmd"];
-        } else if( matchFirst(text, regex("unittest")) ) {
+        } else if( matchFirst(text, regex(r"unittest")) ) {
             params = ["rdmd", "-unittest", "--main"];
+            if (DEBUG) params ~= ["-debug"];
+        } else {
+            params = [];
         }
+    }
+
+    override void run() {
+        if (params.length>0) wait( spawnProcess(params ~ [originalName]) );
+    }
+
+    override void postRun() {
+        if (params.length>0) ("WATCHER | Execution of " ~  originalName ~ " completed at " ~ Clock.currTime().toSimpleString()).writeln;
     }
 }
 

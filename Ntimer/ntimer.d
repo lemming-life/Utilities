@@ -11,7 +11,6 @@ import std.file;
 void main(string[] args) {
   if (args.length < 2) return;
   
-  //string[] sound_files = System.getFiles("/Users/jesse/sync/media/music/zedd/Clarity");
   string[] sound_files = System.getFiles("/System/Library/Sounds");
 
   auto next_sound = new Next!long(0, sound_files.length - 1);
@@ -70,7 +69,7 @@ class PlayIt : Thread {
 
 // Given a range of numbers, get the next one in the sequence.
 class Next (T) {
-  T min, max, current;
+  private T min, max, current;
   
   this(T min, T max, bool inclusive = true) {
     this.min = min;

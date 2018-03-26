@@ -161,12 +161,11 @@ class Backup {
 		import std.stdio;
 
 		foreach(source_file; dirEntries(source, SpanMode.breadth)) {
-			string source_name = source_file[destination.length - 1 .. $];
+			string source_name = source_file[source.length .. $];
 			string destination_file = destination ~ source_name;
 
 			try {
 				if (destination_file.exists) {
-
 					if (source_file.isFile && timeLastModified(source_file) > timeLastModified(destination_file)) {
 						// save the older version 
 						auto backup_file = shaky_dir ~ timeLastModified(destination_file).toSimpleString ~ "/" ~ destination_file[destination.length .. $]; 

@@ -138,9 +138,6 @@ class Backup {
 		import std.file;
 		import std.stdio;
 
-		source.writeln;
-		destination.writeln;
-
 		foreach(destination_file; dirEntries(destination, SpanMode.depth)) {
 			string source_file = source ~ destination_file[source.length+1 .. $];
 
@@ -169,10 +166,6 @@ class Backup {
 
 			try {
 				if (destination_file.exists) {
-					source_file.writeln;
-					timeLastModified(source_file).writeln;
-					destination_file.writeln;
-					timeLastModified(destination_file).writeln;
 
 					if (source_file.isFile && timeLastModified(source_file) > timeLastModified(destination_file)) {
 						// save the older version 

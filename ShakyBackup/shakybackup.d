@@ -120,11 +120,12 @@ class Inspect {
 
 class Backup {
 	string source, destination, shaky_dir;
+	string[] ignore_names = [".fseventsd", ".Spotlight-V100", ".TemporaryItems", ".Trashes", ".DS_Store"];
 
 	this(string source, string destination) {
 		this.source = fix_dir(source); 
 		this.destination = fix_dir(destination);
-		this.shaky_dir = destination ~ "shaky/";
+		this.shaky_dir = this.destination ~ "shaky/";
 	}
 
 	void run() {
@@ -159,8 +160,18 @@ class Backup {
 		import std.path : dirName;
 		import std.file;
 		import std.stdio;
+		import std.string;
 
 		foreach(source_file; dirEntries(source, SpanMode.breadth)) {
+			bool skip = false;
+			foreach(ignore_name; ignore_names) {
+				if (source_file.name.indexOf(ignore_name) > -1) {
+					skip = true;
+					break;
+				}
+			}
+			if (skip) continue;
+
 			string source_name = source_file[source.length .. $];
 			string destination_file = destination ~ source_name;
 

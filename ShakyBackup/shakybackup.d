@@ -37,17 +37,17 @@ void main(string[] args) {
 		auto option = args[3];
 		switch(option) {
 			case "backup": 
-				backup.run;
+				backup.backup;
 				break;
 			case "cleanup":
 				backup.cleanup;
 				break;
 			case "backup_clean":
-				backup.run;
+				backup.backup;
 				backup.cleanup;
 				break;
 			default:
-				backup.run;
+				backup.backup;
 				break;
 		}
 
@@ -128,22 +128,29 @@ class Backup {
 		this.shaky_dir = this.destination ~ "shaky/";
 	}
 
-	void run() {
-		backup;
-	}
-
-	private:
-
 	void cleanup() {
 		// Remove files found in destination that are not in source.
 		import std.file;
 		import std.stdio;
+		import std.string : indexOf;
 
 		foreach(destination_file; dirEntries(destination, SpanMode.depth)) {
+			auto skip = false;
+			foreach(ignore_name; ignore_names) {
+				if (destination_file.name.indexOf(ignore_name) > -1) {
+					skip = true;
+					break;
+				}
+			}
+			if (skip) continue;
+
+
 			string source_file = source ~ destination_file[source.length+1 .. $];
 
 			try {
 				if ( !source_file.exists ) {
+					"doesn't exist".writeln;
+					source_file.writeln;
 					if (destination_file.isFile) {
 						remove(destination_file);
 					} else if(destination_file.isDir) {
@@ -160,10 +167,10 @@ class Backup {
 		import std.path : dirName;
 		import std.file;
 		import std.stdio;
-		import std.string;
+		import std.string : indexOf;
 
 		foreach(source_file; dirEntries(source, SpanMode.breadth)) {
-			bool skip = false;
+			auto skip = false;
 			foreach(ignore_name; ignore_names) {
 				if (source_file.name.indexOf(ignore_name) > -1) {
 					skip = true;
@@ -201,6 +208,8 @@ class Backup {
 			}
 		} // End copy files section
 	}
+
+	private:	
 
 	string fix_dir(string dir) {
 		return dir[$-1] == '/' ? dir : dir ~ '/';

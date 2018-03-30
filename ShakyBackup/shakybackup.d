@@ -25,6 +25,7 @@ Option : does
 void main(string[] args) {
 	try {
 		scope(exit) { Logger.append("Finished", true); }
+		import std.stdio;
 
 		Logger.append("Begin");
 		if ( Inspect.invalid_argument_count(args.length, 4) ) return;
@@ -33,6 +34,8 @@ void main(string[] args) {
 		auto destination = args[2];
 		if (Inspect.invalid_directories([source, destination])) return;
 
+
+		"Starting backup...".writeln;
 		auto backup = new Backup(source, destination);
 		auto option = args[3];
 		switch(option) {
@@ -50,6 +53,7 @@ void main(string[] args) {
 				backup.backup;
 				break;
 		}
+		"Finished backup...".writeln;
 
 	} catch (Exception e) {
 		import std.stdio : writeln;
@@ -145,7 +149,7 @@ class Backup {
 			if (skip) continue;
 
 
-			string source_file = source ~ destination_file[source.length+1 .. $];
+			string source_file = source ~ destination_file[destination.length .. $];
 
 			try {
 				if ( !source_file.exists ) {

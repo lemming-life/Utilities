@@ -136,18 +136,9 @@ class Backup {
 		// Remove files found in destination that are not in source.
 		import std.file;
 		import std.stdio;
-		import std.string : indexOf;
 
 		foreach(destination_file; dirEntries(destination, SpanMode.depth)) {
-			auto skip = false;
-			foreach(ignore_name; ignore_names) {
-				if (destination_file.name.indexOf(ignore_name) > -1) {
-					skip = true;
-					break;
-				}
-			}
-			if (skip) continue;
-
+			if (skip(destination_file.name)) continue;
 
 			string source_file = source ~ destination_file[destination.length .. $];
 
@@ -171,17 +162,9 @@ class Backup {
 		import std.path : dirName;
 		import std.file;
 		import std.stdio;
-		import std.string : indexOf;
 
 		foreach(source_file; dirEntries(source, SpanMode.breadth)) {
-			auto skip = false;
-			foreach(ignore_name; ignore_names) {
-				if (source_file.name.indexOf(ignore_name) > -1) {
-					skip = true;
-					break;
-				}
-			}
-			if (skip) continue;
+			if (skip(source_file.name)) continue;
 
 			string source_name = source_file[source.length .. $];
 			string destination_file = destination ~ source_name;
@@ -214,6 +197,14 @@ class Backup {
 	}
 
 	private:	
+
+	bool skip(string name) {
+		import std.string : indexOf;
+			foreach(ignore_name; ignore_names) {
+				if (name.indexOf(ignore_name) > -1) return true;
+			}
+			return false;
+	}
 
 	string fix_dir(string dir) {
 		return dir[$-1] == '/' ? dir : dir ~ '/';

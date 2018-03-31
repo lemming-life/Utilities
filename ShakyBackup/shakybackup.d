@@ -124,7 +124,7 @@ class Inspect {
 
 class Backup {
 	string source, destination, shaky_dir;
-	string[] ignore_names = [".fseventsd", ".Spotlight-V100", ".TemporaryItems", ".Trashes", ".DS_Store"];
+	string[] ignore_names = [".fseventsd", ".Spotlight-V100", ".TemporaryItems", ".Trashes", ".build", ".DS_Store"];
 
 	this(string source, string destination) {
 		this.source = fix_dir(source); 
@@ -144,8 +144,6 @@ class Backup {
 
 			try {
 				if ( !source_file.exists ) {
-					"doesn't exist".writeln;
-					source_file.writeln;
 					if (destination_file.isFile) {
 						remove(destination_file);
 					} else if(destination_file.isDir) {

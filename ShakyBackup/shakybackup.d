@@ -35,7 +35,7 @@ void main(string[] args) {
 		if (Inspect.invalid_directories([source, destination])) return;
 
 
-		"Starting backup...".writeln;
+		"Starting shakybackup...".writeln;
 		auto backup = new Backup(source, destination);
 		auto option = args[3];
 		switch(option) {
@@ -53,7 +53,7 @@ void main(string[] args) {
 				backup.backup;
 				break;
 		}
-		"Finished backup...".writeln;
+		"Finished shakybackup...".writeln;
 
 	} catch (Exception e) {
 		import std.stdio : writeln;
@@ -160,6 +160,7 @@ class Backup {
 		import std.path : dirName;
 		import std.file;
 		import std.stdio;
+		import std.array : replace;
 
 		foreach(source_file; dirEntries(source, SpanMode.breadth)) {
 			if (skip(source_file.name)) continue;
@@ -171,7 +172,7 @@ class Backup {
 				if (destination_file.exists) {
 					if (source_file.isFile && timeLastModified(source_file) > timeLastModified(destination_file)) {
 						// save the older version 
-						auto backup_file = shaky_dir ~ timeLastModified(destination_file).toSimpleString ~ "/" ~ destination_file[destination.length .. $]; 
+						auto backup_file = shaky_dir ~ timeLastModified(destination_file).toISOExtString.replace(":", "-").replace(".", "-") ~ "/" ~ destination_file[destination.length .. $]; 
 						mkdirRecurse(backup_file.dirName);
 						copy(destination_file, backup_file, PreserveAttributes.yes);
 						setTimes(backup_file, destination_file.timeLastModified, destination_file.timeLastModified);

@@ -14,38 +14,66 @@ To compile:
  rdmd --build-only shakybackup.d
 
 To run:
- ./shakybackup source destination (backup|cleanup|backup_cleanup)
+ ./shakybackup source destination (-backup|-cleanup|-backup_cleanup) (-stdout)
 
 Option : does
-	backup : performs a backup from source to destination, always adds
-	cleanup : removes files from destination that are not in source
-	backup_cleanup : performs a backup and then a cleanup
+	-backup : performs a backup from source to destination, always adds
+	-cleanup : removes files from destination that are not in source
+	-backup_cleanup : performs a backup and then a cleanup
+	-stdout : enables standard out
 */
 
-void main(string[] args) {
+void main(string[] app_args) {
+	string[] args = app_args[0 .. $];
+	import std.algorithm : remove;
 	try {
-		scope(exit) { Logger.append("Finished", true); }
-		import std.stdio;
+		scope(exit) { Logger.append("Finished shaky backup", true); }
+		
+		auto option = "-backup";
+		auto quit = true;
+		do {
+			auto arg_count = args.length;
+			quit = true;
 
-		Logger.append("Begin");
-		if ( Inspect.invalid_argument_count(args.length, 4) ) return;
+			foreach(i, arg; args) {
+				if (arg != "-stdout") continue;
+				Logger.enable_stdout;
+				args = args[0 .. i] ~ args[i+1 .. $];
+				break;
+			}
 
+			foreach(i, arg; args) {
+				if (arg == "-backup" || arg == "-cleanup" || arg == "-backup-cleanup") {
+					option = arg;
+					args = args[0 .. i] ~ args[i+1 .. $];
+					break;
+				}
+			}
+
+			if (args.length != arg_count) {
+				arg_count = args.length;
+				quit = false;
+			}
+
+			if (quit) break;
+		} while(true);
+
+		Logger.append("Begin shaky backup");
+
+		if ( Inspect.invalid_argument_count(args.length, 3) ) return;
 		auto source = args[1];
 		auto destination = args[2];
 		if (Inspect.invalid_directories([source, destination])) return;
 
-
-		"Starting shakybackup...".writeln;
 		auto backup = new Backup(source, destination);
-		auto option = args[3];
 		switch(option) {
-			case "backup": 
+			case "-backup": 
 				backup.backup;
 				break;
-			case "cleanup":
+			case "-cleanup":
 				backup.cleanup;
 				break;
-			case "backup_clean":
+			case "-backup-cleanup":
 				backup.backup;
 				backup.cleanup;
 				break;
@@ -53,24 +81,35 @@ void main(string[] args) {
 				backup.backup;
 				break;
 		}
-		"Finished shakybackup...".writeln;
 
 	} catch (Exception e) {
-		import std.stdio : writeln;
-		"Could not perform operation.".writeln;
+		Logger.append("Could not perform operation.");
 	}
 } // end main
 
 class Logger {
+	import std.stdio;
 	static string[] messages = [];
+	static bool stdout_state = false;
 
-	static void append(string message, bool finalize = false) {
+	static void enable_stdout() {
+		stdout_state = true;
+	}
+
+	static void toggle_stdout() {
+		stdout_state = !stdout_state;
+	}
+
+	static void append(string new_message, bool finalize = false) {
 		import std.file : append;
 		import std.algorithm : each;
 		import std.datetime;
 
 		try {
-			messages ~= [Clock.currTime(UTC()).toISOExtString[0 .. 19] ~ " : " ~ message ~ "\n"];
+			auto message = Clock.currTime(UTC()).toISOExtString[0 .. 19] ~ " : " ~ new_message ~ "\n";
+			if (stdout_state) message.write;
+			messages ~= [message];
+			
 			if (messages.length > 256 || finalize) {
 				auto all_messages = "";
 				messages.each!(msg => all_messages = all_messages ~ msg);
@@ -110,7 +149,7 @@ class Inspect {
 	}
 
 	static bool invalid_argument_count(ulong value, ulong expected) {
-		auto result = value == expected; 
+		auto result = value >= expected; 
 		return fails(result, value, Msg.invalid_argument_count);
 	}
 
@@ -149,6 +188,7 @@ class Backup {
 					} else if(destination_file.isDir) {
 						rmdirRecurse(destination_file);
 					}
+					Logger.append("Removing " ~ destination_file);
 				}
 			} catch (Exception e) {
 				Logger.append("Failed to remove " ~ source_file);
@@ -177,14 +217,18 @@ class Backup {
 						copy(destination_file, backup_file, PreserveAttributes.yes);
 						setTimes(backup_file, destination_file.timeLastModified, destination_file.timeLastModified);
 						
+						Logger.append("Storing " ~ backup_file);
+						
 						// override
 						copy(source_file, destination_file, PreserveAttributes.yes);
 						setTimes(destination_file, source_file.timeLastModified, source_file.timeLastModified);
 					}
 				} else {
 					if (source_file.isDir) {
+						Logger.append("Creating " ~ destination_file);
 						destination_file.mkdir;
 					} else {
+						Logger.append("Copying new " ~ destination_file);
 						copy(source_file, destination_file, PreserveAttributes.yes);
 						setTimes(destination_file, source_file.timeLastModified, source_file.timeLastModified);
 					}

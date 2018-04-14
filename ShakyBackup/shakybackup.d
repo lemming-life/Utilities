@@ -14,12 +14,12 @@ To compile:
  rdmd --build-only shakybackup.d
 
 To run:
- ./shakybackup source destination (-backup|-cleanup|-backup_cleanup) (-stdout)
+ ./shakybackup source destination (-backup|-cleanup|-backup-cleanup) (-stdout)
 
 Option : does
 	-backup : performs a backup from source to destination, always adds
 	-cleanup : removes files from destination that are not in source
-	-backup_cleanup : performs a backup and then a cleanup
+	-backup-cleanup : performs a backup and then a cleanup
 	-stdout : enables standard out
 */
 

@@ -28,7 +28,7 @@ void main(string[] app_args) {
 	import std.algorithm : remove;
 	try {
 		scope(exit) { Logger.append("Finished shaky backup", true); }
-		
+
 		auto option = "-backup";
 		auto quit = true;
 		do {
@@ -67,7 +67,7 @@ void main(string[] app_args) {
 
 		auto backup = new Backup(source, destination);
 		switch(option) {
-			case "-backup": 
+			case "-backup":
 				backup.backup;
 				break;
 			case "-cleanup":
@@ -109,7 +109,7 @@ class Logger {
 			auto message = Clock.currTime(UTC()).toISOExtString[0 .. 19] ~ " : " ~ new_message ~ "\n";
 			if (stdout_state) message.write;
 			messages ~= [message];
-			
+
 			if (messages.length > 256 || finalize) {
 				auto all_messages = "";
 				messages.each!(msg => all_messages = all_messages ~ msg);
@@ -126,8 +126,8 @@ class Logger {
 class Inspect {
 	enum Msg {
 		invalid_argument_count = `Invalid argument count.`,
-		does_not_exist = `Does not exist.`, 
-		
+		does_not_exist = `Does not exist.`,
+
 	}
 
 	static bool invalid_directories(string[] values) {
@@ -149,7 +149,7 @@ class Inspect {
 	}
 
 	static bool invalid_argument_count(ulong value, ulong expected) {
-		auto result = value >= expected; 
+		auto result = value >= expected;
 		return fails(result, value, Msg.invalid_argument_count);
 	}
 
@@ -166,7 +166,7 @@ class Backup {
 	string[] ignore_names = [".fseventsd", ".Spotlight-V100", ".TemporaryItems", ".Trashes", ".build", ".DS_Store"];
 
 	this(string source, string destination) {
-		this.source = fix_dir(source); 
+		this.source = fix_dir(source);
 		this.destination = fix_dir(destination);
 		this.shaky_dir = this.destination ~ "shaky/";
 	}
@@ -210,15 +210,15 @@ class Backup {
 
 			try {
 				if (destination_file.exists) {
-					if (source_file.isFile && timeLastModified(source_file) > timeLastModified(destination_file)) {
-						// save the older version 
-						auto backup_file = shaky_dir ~ timeLastModified(destination_file).toISOExtString.replace(":", "-").replace(".", "-") ~ "/" ~ destination_file[destination.length .. $]; 
+					if (source_file.isFile && (timeLastModified(source_file) > timeLastModified(destination_file) || getSize(source_file) != getSize(destination_file))) {
+						// save the older version
+						auto backup_file = shaky_dir ~ timeLastModified(destination_file).toISOExtString.replace(":", "-").replace(".", "-") ~ "/" ~ destination_file[destination.length .. $];
 						mkdirRecurse(backup_file.dirName);
 						copy(destination_file, backup_file, PreserveAttributes.yes);
 						setTimes(backup_file, destination_file.timeLastModified, destination_file.timeLastModified);
-						
+
 						Logger.append("Storing " ~ backup_file);
-						
+
 						// override
 						copy(source_file, destination_file, PreserveAttributes.yes);
 						setTimes(destination_file, source_file.timeLastModified, source_file.timeLastModified);
@@ -239,7 +239,7 @@ class Backup {
 		} // End copy files section
 	}
 
-	private:	
+	private:
 
 	bool skip(string name) {
 		import std.string : indexOf;
